@@ -1,0 +1,14 @@
+{
+  "name": "dev-jetpack-boost",
+  "version": "1.0.0",
+  "main": "index.js",
+  "repository": "git@github.com:xwp/dev-jetpack-boost.git",
+  "author": "Rheinard Korf <rheinard@thekorfs.com>",
+  "license": "MIT",
+  "scripts": {
+    "start": "node index.js"
+  },
+  "dependencies": {
+    "playwright-chromium": "^0.11.1"
+  }
+}
