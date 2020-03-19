@@ -31,17 +31,17 @@ const { URL } = require('url');
         output: 'json',
         logLevel: 'quiet',
     },
-        {
-            extends: 'lighthouse:default',
-            settings: {
-                onlyAudits: [
-                    'first-meaningful-paint',
-                    'speed-index',
-                    'first-cpu-idle',
-                    'interactive',
-                ],
-            },
-        }
+        // {
+        //     extends: 'lighthouse:default',
+        //     settings: {
+        //         onlyAudits: [
+        //             'first-meaningful-paint',
+        //             'speed-index',
+        //             'first-cpu-idle',
+        //             'interactive',
+        //         ],
+        //     },
+        // }
     );
 
     // Parse "Total Size" from browser resources. (Equivalent to Network tab in Chrome Dev Tools)
