@@ -2,8 +2,20 @@ const { chromium } = require('playwright-chromium');
 const lighthouse = require('lighthouse');
 const { URL } = require('url');
 
-(async () => {
+if (!process.argv[2]) {
+    console.log('Usage: npm|yarn start <URL>');
+    return;
+}
 
+let url = '';
+try {
+    url = new URL(process.argv[2]);
+} catch (error) {
+    console.log('Please specify a VALID URL.');
+    return;
+}
+
+(async ({ href: url }) => {
     // Initate Browser Server so that we can run both browser performance
     // and Lighthouse on same instance (different "tabs").
     const browserServer = await chromium.launchServer();
@@ -13,8 +25,6 @@ const { URL } = require('url');
     const browser = await chromium.connect({ wsEndpoint });
     const context = await browser._defaultContext;
     const page = await context.newPage();
-
-    const url = 'https://photo-calib.pantheonsite.io/';
 
     // Navigate to URL.
     await page.goto(url);
@@ -29,7 +39,7 @@ const { URL } = require('url');
     const { lhr } = await lighthouse(url, {
         port: (new URL(wsEndpoint)).port,
         output: 'json',
-        logLevel: 'quiet',
+        logLevel: 'info',
     },
         // {
         //     extends: 'lighthouse:default',
@@ -89,4 +99,4 @@ const { URL } = require('url');
     console.log(lhAudits(['first-contentful-paint', 'first-meaningful-paint']));
 
     await browserServer.close();
-})();
+})(url);
