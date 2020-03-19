@@ -1,21 +1,50 @@
-const playwright = require('playwright-chromium');
+const { chromium } = require('playwright-chromium');
+const lighthouse = require('lighthouse');
+const { URL } = require('url');
 
 (async () => {
 
-    const browser = await playwright.chromium.launch();
+    // Initate Browser Server so that we can run both browser performance
+    // and Lighthouse on same instance (different "tabs").
+    const browserServer = await chromium.launchServer();
+    const wsEndpoint = browserServer.wsEndpoint();
+
+    // Connect Browser to Browser Server socket.
+    const browser = await chromium.connect({ wsEndpoint });
     const context = await browser._defaultContext;
     const page = await context.newPage();
 
     const url = 'https://photo-calib.pantheonsite.io/';
 
+    // Navigate to URL.
     await page.goto(url);
     // await page.goto(url, { waitUntil: 'networkidle2' });
 
+    // Get Browser Performance Entries.
     const perfEntries = JSON.parse(
         await page.evaluate(() => JSON.stringify(performance.getEntries()))
     );
 
-    // total size of the website:
+    // Connect Lighthouse Audit to Browser Server.
+    const { lhr } = await lighthouse(url, {
+        port: (new URL(wsEndpoint)).port,
+        output: 'json',
+        logLevel: 'quiet',
+    },
+        {
+            extends: 'lighthouse:default',
+            settings: {
+                onlyAudits: [
+                    'first-meaningful-paint',
+                    'speed-index',
+                    'first-cpu-idle',
+                    'interactive',
+                ],
+            },
+        }
+    );
+
+    // Parse "Total Size" from browser resources. (Equivalent to Network tab in Chrome Dev Tools)
     totalSize = () => {
         let totalSize = 0;
         perfEntries.forEach(entry => {
@@ -26,6 +55,27 @@ const playwright = require('playwright-chromium');
         return totalSize;
     }
 
+    // Parse Lighthouse results against given audits and stringify.
+    const lhAudits = (audits) => {
+        let lhAudits = []
+        Object.values(lhr.audits).forEach(a => {
+            if (audits.indexOf(a.id) >= 0) {
+                lhAudits.push(`${a.title} (${a.score}): ${a.displayValue}`)
+            }
+        })
+        return lhAudits.join("\n");
+    }
+
+    // Parse Lighthouse categories and stringify.
+    const lhResults = () => {
+        let lhResults = [];
+        Object.values(lhr.categories).forEach(c => {
+            lhResults.push(`${c.title}: ${c.score * 100}%`)
+        })
+
+        return lhResults.join("\n");
+    }
+
     // Zero when `waitUntil` is `networkidle2`.
     console.log("==== DOM Duration ====")
     console.log(perfEntries[0].duration);
@@ -33,8 +83,10 @@ const playwright = require('playwright-chromium');
     console.log("==== Total size ====")
     console.log(totalSize() / 1000 + 'KB');
 
+    console.log("==== Lighthouse Category Scores ====")
+    console.log(lhResults());
+    console.log("==== Lighthouse Requested Audits ====")
+    console.log(lhAudits(['first-contentful-paint', 'first-meaningful-paint']));
 
-
-    await browser.close();
-
+    await browserServer.close();
 })();
