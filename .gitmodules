@@ -1,0 +1,6 @@
+[submodule "jetpack-boost"]
+	path = jetpack-boost
+	url = git@github.com:Automattic/jetpack-boost.git
+[submodule "microservices"]
+	path = microservices
+	url = git@github.com:Automattic/photon-pro.git
